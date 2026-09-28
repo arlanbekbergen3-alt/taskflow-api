@@ -33,8 +33,8 @@
 
 ### 1. Клонирование репозитория и подготовка
 ```bash
-git clone https://github.com/qaiouxxie14/todo-APP
-cd todo-APP
+git clone https://github.com
+cd ваш-репозиторий
 ```
 
 ### 2. Настройка окружения
@@ -55,7 +55,7 @@ uvicorn asf:app --reload
 > *Примечание: Замените `asf`, если ваш главный файл называется иначе.*
 
 После запуска интерактивная документация (Swagger UI) будет доступна по адресу:  
-🔗 **http://127.0.0.1:9000
+🔗 **http://127.0.0**
 
 ---
 
@@ -72,3 +72,4 @@ uvicorn asf:app --reload
 * `POST /tasks` — Создать задачу (можно сразу передать `category_id`)
 * `PATCH /tasks/{id}` — Обновить текст, статус (`completed`) или сменить категорию
 * `DELETE /tasks/{id}` — Удалить задачу
+
