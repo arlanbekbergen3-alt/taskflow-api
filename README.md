@@ -1,12 +1,5 @@
 # 📝 Todo-API на FastAPI и SQLAlchemy 2.0
 
-<p align="center">
-  <img src="https://shields.io" alt="FastAPI"/>
-  <img src="https://shields.io" alt="Postgres"/>
-  <img src="https://shields.io" alt="Pydantic"/>
-  <img src="https://shields.io" alt="Python"/>
-</p>
-
 Асинхронное RESTful API для управления задачами и категориями. Проект демонстрирует правильную архитектуру веб-приложений на Python с использованием современного стека технологий и асинхронного взаимодействия с базой данных.
 
 ---
@@ -33,8 +26,8 @@
 
 ### 1. Клонирование репозитория и подготовка
 ```bash
-git clone https://github.com
-cd ваш-репозиторий
+git clone https://github.com/qaiouxxie14/todo-APP
+cd todo-APP
 ```
 
 ### 2. Настройка окружения
@@ -55,7 +48,7 @@ uvicorn asf:app --reload
 > *Примечание: Замените `asf`, если ваш главный файл называется иначе.*
 
 После запуска интерактивная документация (Swagger UI) будет доступна по адресу:  
-🔗 **http://127.0.0**
+🔗 **http://127.0.0.1:9000
 
 ---
 
