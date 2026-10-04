@@ -9,12 +9,15 @@ class TaskRepository:
 
     async def get_all(
             self,
+            user_id: str,
             skip: int = 0,
             limit: int = 100,
             completed: bool | None = None,
             category_id: str | None = None,
     ) -> list[TaskORM]:
-        query = select(TaskORM)
+        query = select(TaskORM).where(
+            TaskORM.user_id == user_id
+        )
 
         if completed is not None:
             query = query.where(TaskORM.completed == completed)
@@ -23,13 +26,21 @@ class TaskRepository:
             query = query.where(TaskORM.category_id == category_id)
 
         query = query.offset(skip).limit(limit)
-
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_id(self, task_id: str) -> TaskORM | None:
-        query = select(TaskORM).where(TaskORM.id == task_id)
+    async def get_by_id(
+            self,
+            task_id: str,
+            user_id: str,
+    ) -> TaskORM | None:
+        query = select(TaskORM).where(
+            TaskORM.id == task_id,
+            TaskORM.user_id == user_id,
+        )
+
         result = await self.db.execute(query)
+
         return result.scalar_one_or_none()
 
     async def create(
@@ -46,16 +57,24 @@ class TaskRepository:
         )
 
         self.db.add(task)
+
         await self.db.commit()
         await self.db.refresh(task)
 
         return task
 
-    async def update(self, task: TaskORM, update_data: dict) -> TaskORM:
+    async def update(
+            self,
+            task: TaskORM,
+            update_data: dict,
+    ) -> TaskORM:
+
         for key, value in update_data.items():
             setattr(task, key, value)
+
         await self.db.commit()
         await self.db.refresh(task)
+
         return task
 
     async def delete(self, task: TaskORM) -> None:

@@ -11,25 +11,32 @@ class TaskService:
 
     async def list_tasks(
             self,
+            user_id: str,
             skip: int = 0,
             limit: int = 100,
             completed: bool | None = None,
             category_id: str | None = None,
     ):
         return await self.task_repo.get_all(
+            user_id=user_id,
             skip=skip,
             limit=limit,
             completed=completed,
             category_id=category_id,
         )
 
-    async def find_task(self, task_id: str):
-        task = await self.task_repo.get_by_id(task_id)
+    async def find_task(self, task_id: str, user_id: str):
+        task = await self.task_repo.get_by_id(
+            task_id=task_id,
+            user_id=user_id,
+        )
+
         if not task:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Task not found",
             )
+
         return task
 
     async def add_task(
@@ -53,11 +60,22 @@ class TaskService:
             category_id=category_id,
         )
 
-    async def edit_task(self, task_id: str, update_data: dict):
-        task = await self.find_task(task_id)
+    async def edit_task(
+            self,
+            task_id: str,
+            user_id: str,
+            update_data: dict,
+    ):
+        task = await self.find_task(
+            task_id=task_id,
+            user_id=user_id,
+        )
 
         if "category_id" in update_data and update_data["category_id"] is not None:
-            category = await self.category_repo.get_by_id(update_data["category_id"])
+            category = await self.category_repo.get_by_id(
+                update_data["category_id"]
+            )
+
             if not category:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -66,6 +84,10 @@ class TaskService:
 
         return await self.task_repo.update(task, update_data)
 
-    async def remove_task(self, task_id: str):
-        task = await self.find_task(task_id)
-        await self.task_repo.delete(task)
+async def remove_task(self, task_id: str, user_id: str):
+    task = await self.find_task(
+        task_id=task_id,
+        user_id=user_id,
+    )
+
+    await self.task_repo.delete(task)

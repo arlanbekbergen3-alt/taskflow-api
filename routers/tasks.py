@@ -16,9 +16,12 @@ async def read_tasks(
         completed: bool | None = Query(None),
         category_id: str | None = Query(None),
         db: AsyncSession = Depends(get_db),
+        current_user: UserORM = Depends(get_current_user),
 ):
     service = TaskService(db)
+
     return await service.list_tasks(
+        user_id=current_user.id,
         skip=skip,
         limit=limit,
         completed=completed,
@@ -27,14 +30,27 @@ async def read_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskSchema)
-async def read_task(task_id: str, db: AsyncSession = Depends(get_db)):
+async def read_task(
+        task_id: str,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserORM = Depends(get_current_user),
+):
     service = TaskService(db)
-    return await service.find_task(task_id)
+
+    return await service.find_task(
+        task_id=task_id,
+        user_id=current_user.id,
+    )
 
 
 @router.post("", response_model=TaskSchema, status_code=status.HTTP_201_CREATED)
-async def create_task(payload: TaskCreateSchema, db: AsyncSession = Depends(get_db), current_user: UserORM = Depends(get_current_user)):
+async def create_task(
+        payload: TaskCreateSchema,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserORM = Depends(get_current_user),
+):
     service = TaskService(db)
+
     return await service.add_task(
         title=payload.title,
         user_id=current_user.id,
@@ -44,14 +60,31 @@ async def create_task(payload: TaskCreateSchema, db: AsyncSession = Depends(get_
 
 @router.patch("/{task_id}", response_model=TaskSchema)
 async def update_task(
-        task_id: str, payload: TaskUpdateSchema, db: AsyncSession = Depends(get_db)
+        task_id: str,
+        payload: TaskUpdateSchema,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserORM = Depends(get_current_user),
 ):
     service = TaskService(db)
+
     update_data = payload.model_dump(exclude_unset=True)
-    return await service.edit_task(task_id, update_data)
+
+    return await service.edit_task(
+        task_id=task_id,
+        user_id=current_user.id,
+        update_data=update_data,
+    )
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task(task_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_task(
+        task_id: str,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserORM = Depends(get_current_user),
+):
     service = TaskService(db)
-    await service.remove_task(task_id)
+
+    await service.remove_task(
+        task_id=task_id,
+        user_id=current_user.id,
+    )
