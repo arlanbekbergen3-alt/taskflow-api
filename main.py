@@ -15,12 +15,17 @@ app.include_router(tasks_router)
 app.include_router(auth_router)
 
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception(
-        "Unhandled exception on %s %s",
-        request.method,
-        request.url.path,
-        exc_info=exc,
-    )
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+# A middleware rather than @app.exception_handler(Exception): Starlette
+# re-raises after running a 500 handler, so uvicorn would log the same
+# traceback a second time. Here the exception stops at this layer.
+@app.middleware("http")
+async def global_exception_handler(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception:
+        logger.exception(
+            "Unhandled exception on %s %s",
+            request.method,
+            request.url.path,
+        )
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})

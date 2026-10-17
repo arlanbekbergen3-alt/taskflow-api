@@ -173,3 +173,14 @@ async def test_cannot_use_other_users_category_in_task(client, make_user):
     )
     assert response.status_code == 201
     assert response.json()["category_id"] == category_id
+
+
+@pytest.mark.asyncio
+async def test_empty_category_id_returns_404(client, make_user):
+    headers = await make_user("task_empty_cat_user")
+
+    response = await client.post(
+        "/tasks", headers=headers, json={"title": "t", "category_id": ""}
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Category not found"}

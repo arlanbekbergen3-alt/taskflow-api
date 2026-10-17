@@ -45,7 +45,7 @@ class TaskService:
             user_id: str,
             category_id: str | None = None,
     ):
-        if category_id:
+        if category_id is not None:
             category = await self.category_repo.get_by_id(
                 category_id=category_id,
                 user_id=user_id,
