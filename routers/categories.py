@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_db
 from schemas.category import (CategoriesCreateSchema, CategoriesSchema, CategoriesUpdateSchema)
 from services.category import CategoryService
+from core.auth import get_current_user
+from models.user import UserORM
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
@@ -12,23 +14,30 @@ async def read_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
+    current_user: UserORM = Depends(get_current_user),
 ):
     service = CategoryService(db)
-    return await service.list_categories(skip=skip, limit=limit)
+    return await service.list_categories(user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/{category_id}", response_model=CategoriesSchema)
-async def read_category(category_id: str, db: AsyncSession = Depends(get_db)):
+async def read_category(
+    category_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserORM = Depends(get_current_user),
+):
     service = CategoryService(db)
-    return await service.find_category(category_id)
+    return await service.find_category(category_id, current_user.id)
 
 
 @router.post("", response_model=CategoriesSchema, status_code=status.HTTP_201_CREATED)
 async def create_category(
-    payload: CategoriesCreateSchema, db: AsyncSession = Depends(get_db)
+    payload: CategoriesCreateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserORM = Depends(get_current_user),
 ):
     service = CategoryService(db)
-    return await service.add_category(name=payload.name)
+    return await service.add_category(name=payload.name, user_id=current_user.id)
 
 
 @router.patch("/{category_id}", response_model=CategoriesSchema)
@@ -36,13 +45,18 @@ async def update_category(
     category_id: str,
     payload: CategoriesUpdateSchema,
     db: AsyncSession = Depends(get_db),
+    current_user: UserORM = Depends(get_current_user),
 ):
     service = CategoryService(db)
     update_data = payload.model_dump(exclude_unset=True)
-    return await service.edit_category(category_id, update_data)
+    return await service.edit_category(category_id, current_user.id, update_data)
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(category_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_category(
+    category_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserORM = Depends(get_current_user),
+):
     service = CategoryService(db)
-    await service.remove_category(category_id)
+    await service.remove_category(category_id, current_user.id)

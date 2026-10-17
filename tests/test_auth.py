@@ -20,7 +20,11 @@ async def test_register():
             }
         )
 
-        assert response.status_code in (201, 409)
+        assert response.status_code == 201
+        data = response.json()
+
+        assert data["username"] == "test_user_001"
+        assert "id" in data
 
 
 @pytest.mark.asyncio

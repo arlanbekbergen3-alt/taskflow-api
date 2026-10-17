@@ -46,7 +46,10 @@ class TaskService:
             category_id: str | None = None,
     ):
         if category_id:
-            category = await self.category_repo.get_by_id(category_id)
+            category = await self.category_repo.get_by_id(
+                category_id=category_id,
+                user_id=user_id,
+            )
 
             if not category:
                 raise HTTPException(
@@ -71,23 +74,27 @@ class TaskService:
             user_id=user_id,
         )
 
-        if "category_id" in update_data and update_data["category_id"] is not None:
-            category = await self.category_repo.get_by_id(
-                update_data["category_id"]
-            )
+        if "category_id" in update_data:
+            cat_id = update_data["category_id"]
 
-            if not category:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Category not found",
+            if cat_id is not None:
+                category = await self.category_repo.get_by_id(
+                    category_id=cat_id,
+                    user_id=user_id,
                 )
+
+                if not category:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Category not found",
+                    )
 
         return await self.task_repo.update(task, update_data)
 
-async def remove_task(self, task_id: str, user_id: str):
-    task = await self.find_task(
-        task_id=task_id,
-        user_id=user_id,
-    )
+    async def remove_task(self, task_id: str, user_id: str):
+        task = await self.find_task(
+            task_id=task_id,
+            user_id=user_id,
+        )
 
-    await self.task_repo.delete(task)
+        await self.task_repo.delete(task)

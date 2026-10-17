@@ -77,11 +77,7 @@ async def update_task(
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task(
-        task_id: str,
-        db: AsyncSession = Depends(get_db),
-        current_user: UserORM = Depends(get_current_user),
-):
+async def delete_task(task_id: str, db: AsyncSession = Depends(get_db), current_user: UserORM = Depends(get_current_user)):
     service = TaskService(db)
 
     await service.remove_task(

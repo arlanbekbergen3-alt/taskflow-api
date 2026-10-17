@@ -8,11 +8,14 @@ class CategoryService:
         self.category_repo = CategoryRepository(db)
         self.db = db
 
-    async def list_categories(self, skip: int = 0, limit: int = 100):
-        return await self.category_repo.get_all(skip=skip, limit=limit)
+    async def list_categories(self, user_id: str, skip: int = 0, limit: int = 100):
+        return await self.category_repo.get_all(user_id=user_id, skip=skip, limit=limit)
 
-    async def find_category(self, category_id: str):
-        category = await self.category_repo.get_by_id(category_id)
+    async def find_category(self, category_id: str, user_id: str):
+        category = await self.category_repo.get_by_id(
+            category_id=category_id,
+            user_id=user_id,
+        )
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -20,13 +23,13 @@ class CategoryService:
             )
         return category
 
-    async def add_category(self, name: str):
-        return await self.category_repo.create(name=name)
+    async def add_category(self, name: str, user_id: str):
+        return await self.category_repo.create(name=name, user_id=user_id)
 
-    async def edit_category(self, category_id: str, update_data: dict):
-        category = await self.find_category(category_id)
+    async def edit_category(self, category_id: str, user_id: str, update_data: dict):
+        category = await self.find_category(category_id, user_id)
         return await self.category_repo.update(category, update_data)
 
-    async def remove_category(self, category_id: str):
-        category = await self.find_category(category_id)
+    async def remove_category(self, category_id: str, user_id: str):
+        category = await self.find_category(category_id, user_id)
         await self.category_repo.delete(category)

@@ -3,7 +3,7 @@ from core.config import settings
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,
+    echo=settings.DB_ECHO,
 )
 
 AsyncSessionLocal = async_sessionmaker(
