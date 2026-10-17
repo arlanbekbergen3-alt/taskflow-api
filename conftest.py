@@ -1,3 +1,5 @@
+import os
+
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text
@@ -15,7 +17,7 @@ from main import app
 
 
 TEST_DATABASE_URL = (
-    "postgresql+asyncpg://postgres:REDACTED"
+    f"postgresql+asyncpg://postgres:{os.getenv('DB_PASSWORD', 'REDACTED')}"
     "@localhost:5432/taskflow_test"
 )
 
