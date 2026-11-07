@@ -19,21 +19,25 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 @router.get("", response_model=list[TaskSchema])
 async def read_tasks(
-        service: TaskServiceDep,
-        current_user: CurrentUser,
-        skip: int = Query(0, ge=0),
-        limit: int = Query(100, ge=1, le=1000),
-        completed: bool | None = Query(None),
-        category_id: str | None = Query(None),
-        tag: str | None = Query(None, min_length=1, max_length=30),
-        priority: Priority | None = Query(None),
-        q: str | None = Query(None, min_length=1, max_length=100,
-                              description="Case-insensitive search in title and description"),
-        due_before: datetime | None = Query(None),
-        due_after: datetime | None = Query(None),
-        overdue: bool | None = Query(None, description="Not completed and past its due date"),
-        sort_by: TaskSortField = Query("created_at"),
-        order: SortOrder = Query("desc"),
+    service: TaskServiceDep,
+    current_user: CurrentUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    completed: bool | None = Query(None),
+    category_id: str | None = Query(None),
+    tag: str | None = Query(None, min_length=1, max_length=30),
+    priority: Priority | None = Query(None),
+    q: str | None = Query(
+        None,
+        min_length=1,
+        max_length=100,
+        description="Case-insensitive search in title and description",
+    ),
+    due_before: datetime | None = Query(None),
+    due_after: datetime | None = Query(None),
+    overdue: bool | None = Query(None, description="Not completed and past its due date"),
+    sort_by: TaskSortField = Query("created_at"),
+    order: SortOrder = Query("desc"),
 ):
     return await service.list_tasks(
         user_id=current_user.id,
@@ -69,9 +73,9 @@ async def read_task(task_id: str, service: TaskServiceDep, current_user: Current
 
 @router.post("", response_model=TaskSchema, status_code=status.HTTP_201_CREATED)
 async def create_task(
-        payload: TaskCreateSchema,
-        service: TaskServiceDep,
-        current_user: CurrentUser,
+    payload: TaskCreateSchema,
+    service: TaskServiceDep,
+    current_user: CurrentUser,
 ):
     fields = payload.model_dump()
     fields["priority"] = payload.priority.value
@@ -80,10 +84,10 @@ async def create_task(
 
 @router.patch("/{task_id}", response_model=TaskSchema)
 async def update_task(
-        task_id: str,
-        payload: TaskUpdateSchema,
-        service: TaskServiceDep,
-        current_user: CurrentUser,
+    task_id: str,
+    payload: TaskUpdateSchema,
+    service: TaskServiceDep,
+    current_user: CurrentUser,
 ):
     update_data = payload.model_dump(exclude_unset=True)
     if "priority" in update_data:

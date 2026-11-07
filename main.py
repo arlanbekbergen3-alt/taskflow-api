@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="TaskFlow API",
     description="Personal task tracker: tasks with priorities and due dates, "
-                "per-user categories, search, filters and statistics.",
+    "per-user categories, search, filters and statistics.",
     version="1.0.0",
 )
 

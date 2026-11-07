@@ -10,8 +10,9 @@ from core.exceptions import RateLimitError
 
 
 class SlidingWindowLimiter:
-    def __init__(self, limit: int, window_seconds: int,
-                 clock: Callable[[], float] = time.monotonic):
+    def __init__(
+        self, limit: int, window_seconds: int, clock: Callable[[], float] = time.monotonic
+    ):
         self.limit = limit
         self.window = window_seconds
         self._clock = clock

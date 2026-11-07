@@ -29,8 +29,8 @@ async def register(payload: UserCreateSchema, service: UserServiceDep):
     dependencies=[Depends(login_rate_limit)],
 )
 async def login(
-        form: Annotated[OAuth2PasswordRequestForm, Depends()],
-        service: UserServiceDep,
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    service: UserServiceDep,
 ):
     return await service.login(username=form.username, password=form.password)
 

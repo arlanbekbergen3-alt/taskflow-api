@@ -28,7 +28,9 @@ async def test_replace_and_clear_tags(client, make_user):
     headers = await make_user("tag_replace")
     task = await create(client, headers, title="t", tags=["a", "b"])
 
-    response = await client.patch(f"/tasks/{task['id']}", headers=headers, json={"tags": ["b", "c"]})
+    response = await client.patch(
+        f"/tasks/{task['id']}", headers=headers, json={"tags": ["b", "c"]}
+    )
     assert response.json()["tags"] == ["b", "c"]
 
     response = await client.patch(f"/tasks/{task['id']}", headers=headers, json={"tags": []})

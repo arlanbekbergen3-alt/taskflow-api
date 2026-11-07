@@ -31,8 +31,12 @@ async def test_task_defaults_and_new_fields(client, make_user):
 
     due = in_days(3)
     task = await create(
-        client, headers,
-        title="Full", description="details", priority="high", due_date=iso(due),
+        client,
+        headers,
+        title="Full",
+        description="details",
+        priority="high",
+        due_date=iso(due),
     )
     assert task["priority"] == "high"
     assert task["description"] == "details"
@@ -59,9 +63,7 @@ async def test_completed_at_follows_completed_flag(client, make_user):
     headers = await make_user("feat_completed_at")
     task = await create(client, headers, title="t")
 
-    done = await client.patch(
-        f"/tasks/{task['id']}", headers=headers, json={"completed": True}
-    )
+    done = await client.patch(f"/tasks/{task['id']}", headers=headers, json={"completed": True})
     assert done.status_code == 200
     assert done.json()["completed_at"] is not None
 
@@ -77,17 +79,17 @@ async def test_patch_null_for_required_fields_is_422_not_500(client, make_user):
     task = await create(client, headers, title="t")
 
     for field in ("title", "completed", "priority"):
-        response = await client.patch(
-            f"/tasks/{task['id']}", headers=headers, json={field: None}
-        )
+        response = await client.patch(f"/tasks/{task['id']}", headers=headers, json={field: None})
         assert response.status_code == 422, field
 
     await client.patch(
-        f"/tasks/{task['id']}", headers=headers,
+        f"/tasks/{task['id']}",
+        headers=headers,
         json={"description": "x", "due_date": iso(in_days(1))},
     )
     response = await client.patch(
-        f"/tasks/{task['id']}", headers=headers,
+        f"/tasks/{task['id']}",
+        headers=headers,
         json={"description": None, "due_date": None},
     )
     assert response.status_code == 200
@@ -99,24 +101,33 @@ async def test_patch_null_for_required_fields_is_422_not_500(client, make_user):
 async def test_filters(client, make_user):
     headers = await make_user("feat_filters")
     await create(client, headers, title="Buy milk", priority="low")
-    await create(client, headers, title="Write report", description="quarterly MILK-run",
-                 priority="high", due_date=iso(in_days(5)))
-    late = await create(client, headers, title="Late one", priority="high",
-                        due_date=iso(in_days(-2)))
-    done_late = await create(client, headers, title="Done late",
-                             due_date=iso(in_days(-3)))
-    await client.patch(f"/tasks/{done_late['id']}", headers=headers,
-                       json={"completed": True})
+    await create(
+        client,
+        headers,
+        title="Write report",
+        description="quarterly MILK-run",
+        priority="high",
+        due_date=iso(in_days(5)),
+    )
+    late = await create(
+        client, headers, title="Late one", priority="high", due_date=iso(in_days(-2))
+    )
+    done_late = await create(client, headers, title="Done late", due_date=iso(in_days(-3)))
+    await client.patch(f"/tasks/{done_late['id']}", headers=headers, json={"completed": True})
 
     def titles(response):
         assert response.status_code == 200, response.text
         return {t["title"] for t in response.json()}
 
     assert titles(await client.get("/tasks?priority=high", headers=headers)) == {
-        "Write report", "Late one"}
+        "Write report",
+        "Late one",
+    }
 
     assert titles(await client.get("/tasks?q=milk", headers=headers)) == {
-        "Buy milk", "Write report"}
+        "Buy milk",
+        "Write report",
+    }
     assert titles(await client.get("/tasks?q=%25", headers=headers)) == set()
 
     assert titles(await client.get("/tasks?overdue=true", headers=headers)) == {"Late one"}
@@ -125,11 +136,11 @@ async def test_filters(client, make_user):
     response = await client.get(f"/tasks/{late['id']}", headers=headers)
     assert response.json()["is_overdue"] is True
 
-    assert titles(await client.get(
-        "/tasks", headers=headers, params={"due_before": iso(in_days(1))})
+    assert titles(
+        await client.get("/tasks", headers=headers, params={"due_before": iso(in_days(1))})
     ) == {"Late one", "Done late"}
-    assert titles(await client.get(
-        "/tasks", headers=headers, params={"due_after": iso(in_days(1))})
+    assert titles(
+        await client.get("/tasks", headers=headers, params={"due_after": iso(in_days(1))})
     ) == {"Write report"}
 
 
@@ -149,9 +160,8 @@ async def test_sorting_and_stable_pagination(client, make_user):
     assert await order(sort_by="priority", order="desc") == ["a", "b", "c"]
     assert await order(sort_by="priority", order="asc") == ["c", "b", "a"]
 
-    pages = (
-        await order(sort_by="title", order="asc", skip=0, limit=2)
-        + await order(sort_by="title", order="asc", skip=2, limit=2)
+    pages = await order(sort_by="title", order="asc", skip=0, limit=2) + await order(
+        sort_by="title", order="asc", skip=2, limit=2
     )
     assert pages == ["a", "b", "c"]
 
@@ -180,7 +190,10 @@ async def test_stats(client, make_user):
     response = await client.get("/tasks/stats", headers=headers)
     assert response.status_code == 200
     assert response.json() == {
-        "total": 0, "completed": 0, "active": 0, "overdue": 0,
+        "total": 0,
+        "completed": 0,
+        "active": 0,
+        "overdue": 0,
         "completion_rate": 0.0,
         "by_priority": {"low": 0, "medium": 0, "high": 0},
     }
@@ -193,7 +206,10 @@ async def test_stats(client, make_user):
 
     response = await client.get("/tasks/stats", headers=headers)
     assert response.json() == {
-        "total": 4, "completed": 1, "active": 3, "overdue": 1,
+        "total": 4,
+        "completed": 1,
+        "active": 3,
+        "overdue": 1,
         "completion_rate": 0.25,
         "by_priority": {"low": 1, "medium": 2, "high": 1},
     }

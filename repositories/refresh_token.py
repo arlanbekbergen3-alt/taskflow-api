@@ -10,12 +10,8 @@ class RefreshTokenRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create(
-            self, user_id: str, token_hash: str, expires_at: datetime
-    ) -> RefreshTokenORM:
-        token = RefreshTokenORM(
-            user_id=user_id, token_hash=token_hash, expires_at=expires_at
-        )
+    async def create(self, user_id: str, token_hash: str, expires_at: datetime) -> RefreshTokenORM:
+        token = RefreshTokenORM(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
         self.db.add(token)
         await self.db.commit()
         return token

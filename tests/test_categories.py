@@ -8,9 +8,7 @@ async def test_categories_require_auth(client):
     assert (await client.get("/categories")).status_code == 401
     assert (await client.get(f"/categories/{MISSING_ID}")).status_code == 401
     assert (await client.post("/categories", json={"name": "x"})).status_code == 401
-    assert (
-        await client.patch(f"/categories/{MISSING_ID}", json={"name": "x"})
-    ).status_code == 401
+    assert (await client.patch(f"/categories/{MISSING_ID}", json={"name": "x"})).status_code == 401
     assert (await client.delete(f"/categories/{MISSING_ID}")).status_code == 401
 
 
@@ -94,9 +92,7 @@ async def test_nonexistent_category_returns_404(client, make_user):
     assert response.status_code == 404
     assert response.json() == {"detail": "Category not found"}
 
-    response = await client.patch(
-        f"/categories/{MISSING_ID}", headers=headers, json={"name": "x"}
-    )
+    response = await client.patch(f"/categories/{MISSING_ID}", headers=headers, json={"name": "x"})
     assert response.status_code == 404
 
     response = await client.delete(f"/categories/{MISSING_ID}", headers=headers)
@@ -128,24 +124,24 @@ async def test_category_names_are_unique_per_user(client, make_user):
     owner = await make_user("cat_uniq_owner")
     other = await make_user("cat_uniq_other")
 
-    assert (await client.post("/categories", headers=owner, json={"name": "Work"})).status_code == 201
+    assert (
+        await client.post("/categories", headers=owner, json={"name": "Work"})
+    ).status_code == 201
 
     response = await client.post("/categories", headers=owner, json={"name": "Work"})
     assert response.status_code == 409
     assert response.json() == {"detail": "Category with this name already exists"}
 
-    assert (await client.post("/categories", headers=other, json={"name": "Work"})).status_code == 201
+    assert (
+        await client.post("/categories", headers=other, json={"name": "Work"})
+    ).status_code == 201
 
     home = await client.post("/categories", headers=owner, json={"name": "Home"})
     home_id = home.json()["id"]
-    response = await client.patch(
-        f"/categories/{home_id}", headers=owner, json={"name": "Work"}
-    )
+    response = await client.patch(f"/categories/{home_id}", headers=owner, json={"name": "Work"})
     assert response.status_code == 409
 
-    response = await client.patch(
-        f"/categories/{home_id}", headers=owner, json={"name": "Home"}
-    )
+    response = await client.patch(f"/categories/{home_id}", headers=owner, json={"name": "Home"})
     assert response.status_code == 200
 
 

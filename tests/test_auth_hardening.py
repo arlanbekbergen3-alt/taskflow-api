@@ -56,9 +56,7 @@ async def test_login_failures_are_indistinguishable(client, make_user):
 
 @pytest.mark.asyncio
 async def test_json_login_is_no_longer_accepted(client):
-    response = await client.post(
-        "/auth/login", json={"username": "x", "password": "password123"}
-    )
+    response = await client.post("/auth/login", json={"username": "x", "password": "password123"})
     assert response.status_code == 422
 
 
@@ -71,20 +69,25 @@ async def test_bad_tokens_are_rejected(client, make_user):
     assert (await client.get("/auth/me", headers=garbage)).status_code == 401
 
     forged = jwt.encode({"sub": me["id"], "exp": 4102444800}, "x" * 40, "HS256")
-    assert (await client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {forged}"})).status_code == 401
+    assert (
+        await client.get("/auth/me", headers={"Authorization": f"Bearer {forged}"})
+    ).status_code == 401
 
-    expired = jwt.encode({"sub": me["id"], "exp": 1}, settings.JWT_SECRET_KEY,
-                         settings.JWT_ALGORITHM)
-    assert (await client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {expired}"})).status_code == 401
+    expired = jwt.encode(
+        {"sub": me["id"], "exp": 1}, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHM
+    )
+    assert (
+        await client.get("/auth/me", headers={"Authorization": f"Bearer {expired}"})
+    ).status_code == 401
 
     no_exp = jwt.encode({"sub": me["id"]}, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHM)
-    assert (await client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {no_exp}"})).status_code == 401
+    assert (
+        await client.get("/auth/me", headers={"Authorization": f"Bearer {no_exp}"})
+    ).status_code == 401
 
-    ghost = jwt.encode({"sub": "missing", "exp": 4102444800}, settings.JWT_SECRET_KEY,
-                       settings.JWT_ALGORITHM)
+    ghost = jwt.encode(
+        {"sub": "missing", "exp": 4102444800}, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHM
+    )
     response = await client.get("/auth/me", headers={"Authorization": f"Bearer {ghost}"})
     assert response.status_code == 401
 

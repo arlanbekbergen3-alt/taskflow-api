@@ -22,35 +22,21 @@ class TaskORM(Base):
     title: Mapped[str]
     description: Mapped[str | None] = mapped_column(Text, default=None)
     completed: Mapped[bool] = mapped_column(default=False)
-    priority: Mapped[str] = mapped_column(
-        String(10), default="medium", server_default="medium"
-    )
-    due_date: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    priority: Mapped[str] = mapped_column(String(10), default="medium", server_default="medium")
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     category_id: Mapped[str | None] = mapped_column(
-        ForeignKey("categories.id", ondelete="SET NULL"),
-        default=None
+        ForeignKey("categories.id", ondelete="SET NULL"), default=None
     )
 
-    category: Mapped["CategoryORM | None"] = relationship(
-        back_populates="tasks"
-    )
+    category: Mapped["CategoryORM | None"] = relationship(back_populates="tasks")
 
-    user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False
-    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     user: Mapped["UserORM"] = relationship()
 

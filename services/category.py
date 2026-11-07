@@ -24,9 +24,7 @@ class CategoryService:
             raise NotFoundError("Category not found")
         return category
 
-    async def _ensure_name_free(
-            self, name: str, user_id: str, except_id: str | None = None
-    ):
+    async def _ensure_name_free(self, name: str, user_id: str, except_id: str | None = None):
         existing = await self.category_repo.get_by_name(name, user_id)
         if existing and existing.id != except_id:
             raise ConflictError(DUPLICATE_NAME)
@@ -42,9 +40,7 @@ class CategoryService:
     async def edit_category(self, category_id: str, user_id: str, update_data: dict):
         category = await self.find_category(category_id, user_id)
         if "name" in update_data:
-            await self._ensure_name_free(
-                update_data["name"], user_id, except_id=category.id
-            )
+            await self._ensure_name_free(update_data["name"], user_id, except_id=category.id)
         try:
             return await self.category_repo.update(category, update_data)
         except IntegrityError:

@@ -42,8 +42,7 @@ class UserService:
         await self.refresh_repo.create(
             user_id=user_id,
             token_hash=_hash_token(refresh),
-            expires_at=datetime.now(UTC)
-            + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
         return {
             "access_token": create_access_token(user_id),

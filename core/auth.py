@@ -15,8 +15,8 @@ _CREDENTIALS_ERROR = HTTPException(
 
 
 async def get_current_user(
-        token: str = Depends(oauth2_scheme),
-        db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         payload = jwt.decode(

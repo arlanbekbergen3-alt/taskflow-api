@@ -17,9 +17,7 @@ class TaskService:
         self.db = db
 
     async def list_tasks(self, user_id: str, **filters):
-        return await self.task_repo.get_all(
-            user_id=user_id, now=datetime.now(UTC), **filters
-        )
+        return await self.task_repo.get_all(user_id=user_id, now=datetime.now(UTC), **filters)
 
     async def find_task(self, task_id: str, user_id: str):
         task = await self.task_repo.get_by_id(task_id=task_id, user_id=user_id)
@@ -65,9 +63,7 @@ class TaskService:
             await self._ensure_category_owned(update_data["category_id"], user_id)
 
         if "completed" in update_data and update_data["completed"] != task.completed:
-            update_data["completed_at"] = (
-                datetime.now(UTC) if update_data["completed"] else None
-            )
+            update_data["completed_at"] = datetime.now(UTC) if update_data["completed"] else None
 
         if "tags" in update_data:
             update_data["tags"] = await self._resolve_tags(user_id, update_data["tags"])

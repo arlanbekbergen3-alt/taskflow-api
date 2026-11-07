@@ -18,6 +18,4 @@ class TagORM(Base):
     __table_args__ = (UniqueConstraint("user_id", "name", name="uq_tags_user_id_name"),)
 
     name: Mapped[str] = mapped_column(String(30))
-    user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

@@ -9,10 +9,10 @@ class CategoryRepository:
         self.db = db
 
     async def get_all(
-            self,
-            user_id: str,
-            skip: int = 0,
-            limit: int = 100,
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[CategoryORM]:
         query = (
             select(CategoryORM)
@@ -25,9 +25,9 @@ class CategoryRepository:
         return list(result.scalars().all())
 
     async def get_by_id(
-            self,
-            category_id: str,
-            user_id: str,
+        self,
+        category_id: str,
+        user_id: str,
     ) -> CategoryORM | None:
         query = select(CategoryORM).where(
             CategoryORM.id == category_id,

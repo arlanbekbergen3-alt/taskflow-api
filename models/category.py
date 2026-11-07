@@ -12,19 +12,12 @@ if TYPE_CHECKING:
 
 class CategoryORM(Base):
     __tablename__ = "categories"
-    __table_args__ = (
-        UniqueConstraint("user_id", "name", name="uq_categories_user_id_name"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_categories_user_id_name"),)
 
     name: Mapped[str]
 
-    user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False
-    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     user: Mapped["UserORM"] = relationship()
 
-    tasks: Mapped[list["TaskORM"]] = relationship(
-        back_populates="category"
-    )
+    tasks: Mapped[list["TaskORM"]] = relationship(back_populates="category")

@@ -21,11 +21,7 @@ _SORT_COLUMNS = {
 
 
 def _overdue_clause(now):
-    return (
-        TaskORM.completed.is_(False)
-        & TaskORM.due_date.is_not(None)
-        & (TaskORM.due_date < now)
-    )
+    return TaskORM.completed.is_(False) & TaskORM.due_date.is_not(None) & (TaskORM.due_date < now)
 
 
 class TaskRepository:
@@ -33,21 +29,21 @@ class TaskRepository:
         self.db = db
 
     async def get_all(
-            self,
-            user_id: str,
-            skip: int = 0,
-            limit: int = 100,
-            completed: bool | None = None,
-            category_id: str | None = None,
-            priority: str | None = None,
-            search: str | None = None,
-            tag: str | None = None,
-            due_before: datetime | None = None,
-            due_after: datetime | None = None,
-            overdue: bool | None = None,
-            sort_by: str = "created_at",
-            order: str = "desc",
-            now: datetime | None = None,
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
+        completed: bool | None = None,
+        category_id: str | None = None,
+        priority: str | None = None,
+        search: str | None = None,
+        tag: str | None = None,
+        due_before: datetime | None = None,
+        due_after: datetime | None = None,
+        overdue: bool | None = None,
+        sort_by: str = "created_at",
+        order: str = "desc",
+        now: datetime | None = None,
     ) -> list[TaskORM]:
         query = select(TaskORM).where(TaskORM.user_id == user_id)
 
@@ -89,9 +85,9 @@ class TaskRepository:
         return list(result.scalars().all())
 
     async def get_by_id(
-            self,
-            task_id: str,
-            user_id: str,
+        self,
+        task_id: str,
+        user_id: str,
     ) -> TaskORM | None:
         query = select(TaskORM).where(
             TaskORM.id == task_id,
@@ -110,9 +106,7 @@ class TaskRepository:
             func.count().filter(TaskORM.priority == "high"),
         ).where(TaskORM.user_id == user_id)
 
-        total, completed, overdue, low, medium, high = (
-            await self.db.execute(query)
-        ).one()
+        total, completed, overdue, low, medium, high = (await self.db.execute(query)).one()
         return {
             "total": total,
             "completed": completed,

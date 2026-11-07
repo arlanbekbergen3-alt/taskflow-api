@@ -36,9 +36,7 @@ def setup_logging(level: str = "INFO", fmt: str = "text") -> None:
     handler.setFormatter(
         JsonFormatter()
         if fmt == "json"
-        else logging.Formatter(
-            "%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s"
-        )
+        else logging.Formatter("%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s")
     )
     root.addHandler(handler)
     root.setLevel(level)

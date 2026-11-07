@@ -8,9 +8,7 @@ from models.refresh_token import RefreshTokenORM
 
 
 async def login(client, username, password="password123"):
-    response = await client.post(
-        "/auth/login", data={"username": username, "password": password}
-    )
+    response = await client.post("/auth/login", data={"username": username, "password": password})
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -41,9 +39,7 @@ async def test_refresh_rotates_tokens(client):
     second = response.json()
     assert second["refresh_token"] != first["refresh_token"]
 
-    me = await client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {second['access_token']}"}
-    )
+    me = await client.get("/auth/me", headers={"Authorization": f"Bearer {second['access_token']}"})
     assert me.status_code == 200
     assert me.json()["username"] == "sess_rotate"
 
@@ -52,8 +48,9 @@ async def test_refresh_rotates_tokens(client):
 async def test_reusing_a_refresh_token_revokes_all_sessions(client):
     await register(client, "sess_reuse")
     first = await login(client, "sess_reuse")
-    second = (await client.post(
-        "/auth/refresh", json={"refresh_token": first["refresh_token"]})).json()
+    second = (
+        await client.post("/auth/refresh", json={"refresh_token": first["refresh_token"]})
+    ).json()
 
     replay = await client.post("/auth/refresh", json={"refresh_token": first["refresh_token"]})
     assert replay.status_code == 401
@@ -72,9 +69,7 @@ async def test_refresh_rejects_unknown_and_expired_tokens(client, db_session):
     assert unknown.status_code == 401
 
     await db_session.execute(
-        update(RefreshTokenORM).values(
-            expires_at=datetime.now(UTC) - timedelta(seconds=1)
-        )
+        update(RefreshTokenORM).values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
     )
     await db_session.commit()
     expired = await client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})

@@ -78,9 +78,7 @@ class TaskSchema(AppBaseModel):
     @property
     def is_overdue(self) -> bool:
         return (
-            not self.completed
-            and self.due_date is not None
-            and self.due_date < datetime.now(UTC)
+            not self.completed and self.due_date is not None and self.due_date < datetime.now(UTC)
         )
 
 

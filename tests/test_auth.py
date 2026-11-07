@@ -8,16 +8,9 @@ from main import app
 async def test_register():
     transport = ASGITransport(app=app)
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
-            "/auth/register",
-            json={
-                "username": "test_user_001",
-                "password": "password123"
-            }
+            "/auth/register", json={"username": "test_user_001", "password": "password123"}
         )
 
         assert response.status_code == 201
@@ -31,24 +24,13 @@ async def test_register():
 async def test_login():
     transport = ASGITransport(app=app)
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         await client.post(
-            "/auth/register",
-            json={
-                "username": "test_user_002",
-                "password": "password123"
-            }
+            "/auth/register", json={"username": "test_user_002", "password": "password123"}
         )
 
         response = await client.post(
-            "/auth/login",
-            data={
-                "username": "test_user_002",
-                "password": "password123"
-            }
+            "/auth/login", data={"username": "test_user_002", "password": "password123"}
         )
 
         assert response.status_code == 200

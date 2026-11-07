@@ -8,17 +8,8 @@ from main import app
 async def test_create_task_requires_auth():
     transport = ASGITransport(app=app)
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test"
-    ) as client:
-        response = await client.post(
-            "/tasks",
-            json={
-                "title": "Test task",
-                "completed": False
-            }
-        )
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/tasks", json={"title": "Test task", "completed": False})
 
         assert response.status_code == 401
 
@@ -27,24 +18,13 @@ async def test_create_task_requires_auth():
 async def test_create_task_with_auth():
     transport = ASGITransport(app=app)
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         await client.post(
-            "/auth/register",
-            json={
-                "username": "task_user_001",
-                "password": "password123"
-            }
+            "/auth/register", json={"username": "task_user_001", "password": "password123"}
         )
 
         login_response = await client.post(
-            "/auth/login",
-            data={
-                "username": "task_user_001",
-                "password": "password123"
-            }
+            "/auth/login", data={"username": "task_user_001", "password": "password123"}
         )
 
         assert login_response.status_code == 200
@@ -53,13 +33,8 @@ async def test_create_task_with_auth():
 
         response = await client.post(
             "/tasks",
-            headers={
-                "Authorization": f"Bearer {token}"
-            },
-            json={
-                "title": "My test task",
-                "completed": False
-            }
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "My test task", "completed": False},
         )
 
         assert response.status_code == 201
@@ -110,9 +85,7 @@ async def test_cannot_touch_other_users_task(client, make_user):
     response = await client.get(f"/tasks/{task_id}", headers=stranger)
     assert response.status_code == 404
 
-    response = await client.patch(
-        f"/tasks/{task_id}", headers=stranger, json={"title": "Hacked"}
-    )
+    response = await client.patch(f"/tasks/{task_id}", headers=stranger, json={"title": "Hacked"})
     assert response.status_code == 404
 
     response = await client.delete(f"/tasks/{task_id}", headers=stranger)
@@ -135,9 +108,7 @@ async def test_nonexistent_task_returns_404(client, make_user):
     assert response.status_code == 404
     assert response.json() == {"detail": "Task not found"}
 
-    response = await client.patch(
-        f"/tasks/{MISSING_ID}", headers=headers, json={"title": "x"}
-    )
+    response = await client.patch(f"/tasks/{MISSING_ID}", headers=headers, json={"title": "x"})
     assert response.status_code == 404
 
     response = await client.delete(f"/tasks/{MISSING_ID}", headers=headers)
@@ -178,8 +149,6 @@ async def test_cannot_use_other_users_category_in_task(client, make_user):
 async def test_empty_category_id_returns_404(client, make_user):
     headers = await make_user("task_empty_cat_user")
 
-    response = await client.post(
-        "/tasks", headers=headers, json={"title": "t", "category_id": ""}
-    )
+    response = await client.post("/tasks", headers=headers, json={"title": "t", "category_id": ""})
     assert response.status_code == 404
     assert response.json() == {"detail": "Category not found"}
