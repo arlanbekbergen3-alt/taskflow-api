@@ -1,5 +1,5 @@
 # TaskFlow API
-n[![CI](https://github.com/arlanbekbergen3-alt/taskflow-api/actions/workflows/ci.yml/badge.svg)](https://github.com/arlanbekbergen3-alt/taskflow-api/actions/workflows/ci.yml)
+[![CI](https://github.com/arlanbekbergen3-alt/taskflow-api/actions/workflows/ci.yml/badge.svg)](https://github.com/arlanbekbergen3-alt/taskflow-api/actions/workflows/ci.yml)
 
 Асинхронный REST API личного таск-трекера: задачи с приоритетами, дедлайнами и описанием, персональные категории, поиск, фильтры, сортировка и статистика. Каждый пользователь видит только свои данные.
 
