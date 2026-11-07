@@ -10,7 +10,6 @@ class UserCreateSchema(BaseModel):
     @field_validator("password")
     @classmethod
     def _bcrypt_limit(cls, value: str) -> str:
-        # bcrypt silently ignores (or rejects) anything past 72 bytes.
         if len(value.encode("utf-8")) > 72:
             raise ValueError("password must be at most 72 bytes in UTF-8")
         return value

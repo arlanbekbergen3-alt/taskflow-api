@@ -16,8 +16,6 @@ from db.base import Base
 from db.database import get_db
 from main import app
 
-# Same server, credentials and options as the app (DATABASE_URL from .env),
-# only a separate database, so tests never touch the app's data.
 APP_DATABASE_URL = make_url(settings.DATABASE_URL)
 TEST_DATABASE_URL = APP_DATABASE_URL.set(database="taskflow_test")
 
@@ -25,8 +23,6 @@ assert TEST_DATABASE_URL.database != APP_DATABASE_URL.database, (
     "Test database must differ from the app database"
 )
 
-# NullPool: pytest-asyncio runs session fixtures and tests in different
-# event loops, and asyncpg connections must not be shared between loops.
 engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,

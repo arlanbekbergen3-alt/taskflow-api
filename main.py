@@ -40,17 +40,10 @@ async def app_error_handler(request: Request, exc: AppError):
 
 @app.get("/health", tags=["Health"])
 async def health(db: DbSession):
-    """Liveness + database connectivity, for Docker/orchestrator checks."""
     await db.execute(text("SELECT 1"))
     return {"status": "ok"}
 
 
-# A middleware rather than @app.exception_handler(Exception): Starlette
-# re-raises after running a 500 handler, so uvicorn would log the same
-# traceback a second time. Here the exception stops at this layer.
-#
-# It also gives every request an id (taken from X-Request-ID if the proxy
-# sent one) that appears in every log line and in the response header.
 @app.middleware("http")
 async def request_context(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex

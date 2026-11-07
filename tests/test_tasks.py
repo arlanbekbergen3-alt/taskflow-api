@@ -12,7 +12,6 @@ async def test_create_task_requires_auth():
         transport=transport,
         base_url="http://test"
     ) as client:
-
         response = await client.post(
             "/tasks",
             json={
@@ -32,7 +31,6 @@ async def test_create_task_with_auth():
         transport=transport,
         base_url="http://test"
     ) as client:
-
         await client.post(
             "/auth/register",
             json={

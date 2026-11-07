@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     DB_ECHO: bool = False
     DB_PASSWORD: str | None = None
     LOG_LEVEL: str = "INFO"
-    LOG_FORMAT: str = "text"  # "text" or "json"
+    LOG_FORMAT: str = "text"
 
     model_config = SettingsConfigDict(
         env_file=".env",

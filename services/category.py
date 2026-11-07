@@ -35,7 +35,7 @@ class CategoryService:
         await self._ensure_name_free(name, user_id)
         try:
             return await self.category_repo.create(name=name, user_id=user_id)
-        except IntegrityError:  # lost a race with a concurrent request
+        except IntegrityError:
             await self.db.rollback()
             raise ConflictError(DUPLICATE_NAME) from None
 

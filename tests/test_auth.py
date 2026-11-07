@@ -12,7 +12,6 @@ async def test_register():
         transport=transport,
         base_url="http://test"
     ) as client:
-
         response = await client.post(
             "/auth/register",
             json={
@@ -36,7 +35,6 @@ async def test_login():
         transport=transport,
         base_url="http://test"
     ) as client:
-
         await client.post(
             "/auth/register",
             json={

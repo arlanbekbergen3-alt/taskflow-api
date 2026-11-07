@@ -15,8 +15,6 @@ def broken_dependency():
 async def test_unhandled_exception_returns_500_and_is_logged_once(caplog):
     app.dependency_overrides[get_current_user] = broken_dependency
     try:
-        # raise_app_exceptions=True (the default) would fail this test
-        # if the exception escaped the middleware instead of stopping there.
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",

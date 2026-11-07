@@ -1,5 +1,3 @@
-"""Dependency providers: routers ask for a ready service instead of
-building it by hand in every endpoint."""
 from typing import Annotated
 
 from fastapi import Depends

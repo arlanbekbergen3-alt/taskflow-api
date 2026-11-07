@@ -11,7 +11,6 @@ from alembic import op
 import sqlalchemy as sa
 
 
-# revision identifiers, used by Alembic.
 revision: str = 'c3d5a7e9f1b2'
 down_revision: Union[str, Sequence[str], None] = 'b7c41e9a2d13'
 branch_labels: Union[str, Sequence[str], None] = None
@@ -19,7 +18,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
     op.add_column('tasks', sa.Column('description', sa.Text(), nullable=True))
     op.add_column('tasks', sa.Column(
         'priority', sa.String(length=10), nullable=False, server_default='medium'))
@@ -32,8 +30,6 @@ def upgrade() -> None:
     op.create_index('ix_tasks_user_id_completed', 'tasks', ['user_id', 'completed'])
     op.create_index('ix_tasks_category_id', 'tasks', ['category_id'])
 
-    # Existing duplicates (same user, same name) would block the unique
-    # constraint: keep the first one as is, number the rest.
     op.execute("""
         UPDATE categories c
         SET name = c.name || ' (' || d.rn || ')'
@@ -48,7 +44,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
     op.drop_constraint('uq_categories_user_id_name', 'categories', type_='unique')
     op.drop_index('ix_tasks_category_id', table_name='tasks')
     op.drop_index('ix_tasks_user_id_completed', table_name='tasks')

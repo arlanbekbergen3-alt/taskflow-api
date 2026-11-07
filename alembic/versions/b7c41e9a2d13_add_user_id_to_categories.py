@@ -11,7 +11,6 @@ from alembic import op
 import sqlalchemy as sa
 
 
-# revision identifiers, used by Alembic.
 revision: str = 'b7c41e9a2d13'
 down_revision: Union[str, Sequence[str], None] = 'f92e3cead050'
 branch_labels: Union[str, Sequence[str], None] = None
@@ -19,12 +18,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
     op.add_column('categories', sa.Column('user_id', sa.String(), nullable=True))
 
-    # Owner of an existing category = owner of the tasks that use it.
-    # If several users share a category, the one with the smallest id
-    # keeps the original row and every other user gets a private copy.
     op.execute("""
         UPDATE categories c
         SET user_id = owners.user_id
@@ -61,7 +56,6 @@ def upgrade() -> None:
           AND t.user_id = cc.user_id
     """)
 
-    # Categories not used by any task have no owner to infer.
     op.execute("DELETE FROM categories WHERE user_id IS NULL")
 
     op.alter_column('categories', 'user_id', nullable=False)
@@ -74,6 +68,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
     op.drop_constraint('categories_user_id_fkey', 'categories', type_='foreignkey')
     op.drop_column('categories', 'user_id')

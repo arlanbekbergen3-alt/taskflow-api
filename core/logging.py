@@ -28,7 +28,7 @@ class JsonFormatter(logging.Formatter):
 def setup_logging(level: str = "INFO", fmt: str = "text") -> None:
     root = logging.getLogger()
     if any(getattr(h, "_taskflow", False) for h in root.handlers):
-        return  # already configured (e.g. module imported twice in tests)
+        return
 
     handler = logging.StreamHandler()
     handler._taskflow = True  # type: ignore[attr-defined]

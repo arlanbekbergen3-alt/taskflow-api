@@ -134,7 +134,6 @@ async def test_category_names_are_unique_per_user(client, make_user):
     assert response.status_code == 409
     assert response.json() == {"detail": "Category with this name already exists"}
 
-    # another user may reuse the name
     assert (await client.post("/categories", headers=other, json={"name": "Work"})).status_code == 201
 
     home = await client.post("/categories", headers=owner, json={"name": "Home"})
@@ -144,7 +143,6 @@ async def test_category_names_are_unique_per_user(client, make_user):
     )
     assert response.status_code == 409
 
-    # renaming to its own current name is fine
     response = await client.patch(
         f"/categories/{home_id}", headers=owner, json={"name": "Home"}
     )

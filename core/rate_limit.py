@@ -10,12 +10,6 @@ from core.exceptions import RateLimitError
 
 
 class SlidingWindowLimiter:
-    """In-memory sliding-window limiter.
-
-    Per-process state: fine for one worker. With several workers/replicas
-    the limit applies per process; move the counters to Redis to share them.
-    """
-
     def __init__(self, limit: int, window_seconds: int,
                  clock: Callable[[], float] = time.monotonic):
         self.limit = limit
@@ -24,7 +18,6 @@ class SlidingWindowLimiter:
         self._hits: dict[str, deque[float]] = defaultdict(deque)
 
     def check(self, key: str) -> int:
-        """Register a hit. Returns 0 if allowed, else seconds until retry."""
         now = self._clock()
         hits = self._hits[key]
         while hits and now - hits[0] >= self.window:
@@ -44,8 +37,6 @@ login_limiter = SlidingWindowLimiter(
 
 
 async def login_rate_limit(request: Request) -> None:
-    # request.client is the direct peer; behind a reverse proxy configure
-    # uvicorn's --proxy-headers so this is the real client address.
     client = request.client.host if request.client else "unknown"
     retry_after = login_limiter.check(client)
     if retry_after:

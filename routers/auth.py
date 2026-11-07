@@ -32,14 +32,11 @@ async def login(
         form: Annotated[OAuth2PasswordRequestForm, Depends()],
         service: UserServiceDep,
 ):
-    """OAuth2 password flow (form fields), so Swagger's Authorize works."""
     return await service.login(username=form.username, password=form.password)
 
 
 @router.post("/refresh", response_model=TokenSchema, dependencies=[Depends(login_rate_limit)])
 async def refresh(payload: RefreshRequestSchema, service: UserServiceDep):
-    """Exchange a refresh token for a new pair. The old refresh token is
-    single-use: replaying it revokes every session of that user."""
     return await service.refresh(payload.refresh_token)
 
 

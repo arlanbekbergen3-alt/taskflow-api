@@ -33,7 +33,7 @@ class UserService:
                 username=username,
                 password_hash=hash_password(password),
             )
-        except IntegrityError:  # concurrent registration of the same name
+        except IntegrityError:
             await self.db.rollback()
             raise ConflictError("Username already exists") from None
 
@@ -60,8 +60,6 @@ class UserService:
         return await self._issue_tokens(user.id)
 
     async def refresh(self, refresh_token: str):
-        """Rotation: every refresh token works once. Presenting an already
-        used one means it leaked, so all of the user's sessions are revoked."""
         now = datetime.now(UTC)
         stored = await self.refresh_repo.get_by_hash(_hash_token(refresh_token))
 
@@ -76,12 +74,11 @@ class UserService:
             raise UnauthorizedError(INVALID_REFRESH)
 
         if not await self.refresh_repo.revoke(stored, now):
-            raise UnauthorizedError(INVALID_REFRESH)  # lost a concurrent race
+            raise UnauthorizedError(INVALID_REFRESH)
 
         return await self._issue_tokens(stored.user_id)
 
     async def logout(self, refresh_token: str) -> None:
-        """Idempotent: unknown or already revoked tokens are not an error."""
         stored = await self.refresh_repo.get_by_hash(_hash_token(refresh_token))
         if stored is not None and stored.revoked_at is None:
             await self.refresh_repo.revoke(stored, datetime.now(UTC))

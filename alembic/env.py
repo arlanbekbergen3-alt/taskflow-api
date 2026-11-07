@@ -7,9 +7,6 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from core.config import settings
 from db.base import Base
-
-# Imported for their side effect: registering the tables on Base.metadata.
-# Without them autogenerate would think every table has to be dropped.
 from models.category import CategoryORM  # noqa: F401
 from models.refresh_token import RefreshTokenORM  # noqa: F401
 from models.tag import TagORM  # noqa: F401

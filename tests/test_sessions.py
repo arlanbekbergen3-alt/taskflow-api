@@ -55,12 +55,10 @@ async def test_reusing_a_refresh_token_revokes_all_sessions(client):
     second = (await client.post(
         "/auth/refresh", json={"refresh_token": first["refresh_token"]})).json()
 
-    # Replaying the already-used token looks like theft...
     replay = await client.post("/auth/refresh", json={"refresh_token": first["refresh_token"]})
     assert replay.status_code == 401
     assert replay.json() == {"detail": "Invalid refresh token"}
 
-    # ...so the legitimate descendant is revoked too.
     response = await client.post("/auth/refresh", json={"refresh_token": second["refresh_token"]})
     assert response.status_code == 401
 
@@ -122,13 +120,13 @@ def test_sliding_window_limiter_forgets_old_hits():
 
     assert limiter.check("a") == 0
     assert limiter.check("a") == 0
-    assert limiter.check("a") == 60          # blocked, 60s until the oldest hit expires
-    assert limiter.check("b") == 0           # keys are independent
+    assert limiter.check("a") == 60
+    assert limiter.check("b") == 0
 
     now[0] = 59
     assert limiter.check("a") == 1
     now[0] = 60
-    assert limiter.check("a") == 0           # first hit left the window
+    assert limiter.check("a") == 0
 
 
 @pytest.mark.asyncio

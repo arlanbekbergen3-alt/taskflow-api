@@ -7,9 +7,6 @@ from db.base import Base
 
 
 class RefreshTokenORM(Base):
-    """Only the SHA-256 of the token is stored, so a DB leak does not leak
-    usable sessions."""
-
     __tablename__ = "refresh_tokens"
 
     user_id: Mapped[str] = mapped_column(

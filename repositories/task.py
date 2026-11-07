@@ -83,7 +83,6 @@ class TaskRepository:
         direction = column.desc() if order == "desc" else column.asc()
         if sort_by == "due_date":
             direction = direction.nulls_last()
-        # id as a tie-breaker keeps pagination stable between requests.
         query = query.order_by(direction, TaskORM.id).offset(skip).limit(limit)
 
         result = await self.db.execute(query)

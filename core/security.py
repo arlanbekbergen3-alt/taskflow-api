@@ -10,8 +10,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Precomputed so that login for an unknown user costs as much as for a known
-# one (no username enumeration through response time).
 _DUMMY_HASH = pwd_context.hash("dummy-password")
 
 

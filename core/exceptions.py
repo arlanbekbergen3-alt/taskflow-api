@@ -1,7 +1,3 @@
-"""Domain errors. Services raise these; main.py maps them to HTTP responses,
-so the business layer does not depend on FastAPI."""
-
-
 class AppError(Exception):
     status_code = 500
     detail = "Internal server error"

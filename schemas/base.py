@@ -8,13 +8,6 @@ class AppBaseModel(BaseModel):
 
 
 class PatchModel(BaseModel):
-    """Base for PATCH payloads.
-
-    Fields listed in `non_nullable` may be omitted, but not sent as an
-    explicit null: that would hit a NOT NULL constraint and surface as a
-    500 instead of a clean 422.
-    """
-
     non_nullable: ClassVar[tuple[str, ...]] = ()
 
     @model_validator(mode="after")

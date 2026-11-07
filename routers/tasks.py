@@ -57,7 +57,6 @@ async def read_tags(service: TaskServiceDep, current_user: CurrentUser):
     return await service.list_tags(user_id=current_user.id)
 
 
-# Declared before "/{task_id}", otherwise "stats" would be taken as a task id.
 @router.get("/stats", response_model=TaskStatsSchema)
 async def read_task_stats(service: TaskServiceDep, current_user: CurrentUser):
     return await service.stats(user_id=current_user.id)

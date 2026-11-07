@@ -9,8 +9,6 @@ class TagRepository:
         self.db = db
 
     async def get_or_create_many(self, user_id: str, names: list[str]) -> list[TagORM]:
-        """Return the user's tags for `names`, creating the missing ones.
-        Does not commit: the caller commits together with the task."""
         if not names:
             return []
         result = await self.db.execute(

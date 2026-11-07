@@ -43,7 +43,7 @@ class TaskService:
     async def _save(self, operation):
         try:
             return await operation
-        except IntegrityError:  # two requests created the same new tag at once
+        except IntegrityError:
             await self.db.rollback()
             raise ConflictError("Tag was modified concurrently, retry the request") from None
 
@@ -64,7 +64,6 @@ class TaskService:
         if "category_id" in update_data:
             await self._ensure_category_owned(update_data["category_id"], user_id)
 
-        # completed_at follows the completed flag; clients cannot set it.
         if "completed" in update_data and update_data["completed"] != task.completed:
             update_data["completed_at"] = (
                 datetime.now(UTC) if update_data["completed"] else None

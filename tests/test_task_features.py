@@ -82,7 +82,6 @@ async def test_patch_null_for_required_fields_is_422_not_500(client, make_user):
         )
         assert response.status_code == 422, field
 
-    # Nullable fields can still be cleared.
     await client.patch(
         f"/tasks/{task['id']}", headers=headers,
         json={"description": "x", "due_date": iso(in_days(1))},
@@ -116,13 +115,10 @@ async def test_filters(client, make_user):
     assert titles(await client.get("/tasks?priority=high", headers=headers)) == {
         "Write report", "Late one"}
 
-    # search hits title and description, case-insensitively
     assert titles(await client.get("/tasks?q=milk", headers=headers)) == {
         "Buy milk", "Write report"}
-    # LIKE wildcards in the query are literals, not patterns
     assert titles(await client.get("/tasks?q=%25", headers=headers)) == set()
 
-    # overdue = not completed and past due; a completed late task is not overdue
     assert titles(await client.get("/tasks?overdue=true", headers=headers)) == {"Late one"}
     assert "Late one" not in titles(await client.get("/tasks?overdue=false", headers=headers))
 

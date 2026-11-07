@@ -27,8 +27,6 @@ class RefreshTokenRepository:
         return result.scalar_one_or_none()
 
     async def revoke(self, token: RefreshTokenORM, when: datetime) -> bool:
-        """Atomically revoke; False if someone else already did (so two
-        concurrent refreshes cannot both succeed with one token)."""
         result = await self.db.execute(
             update(RefreshTokenORM)
             .where(RefreshTokenORM.id == token.id, RefreshTokenORM.revoked_at.is_(None))

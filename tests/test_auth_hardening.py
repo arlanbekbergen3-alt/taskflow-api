@@ -20,11 +20,11 @@ async def test_register_validation(client):
             "/auth/register", json={"username": username, "password": password}
         )
 
-    assert (await register("ab", "password123")).status_code == 422       # short name
-    assert (await register("bad name!", "password123")).status_code == 422  # charset
+    assert (await register("ab", "password123")).status_code == 422
+    assert (await register("bad name!", "password123")).status_code == 422
     assert (await register("hard_short_pw", "short")).status_code == 422
-    assert (await register("hard_long_pw", "x" * 73)).status_code == 422   # bcrypt limit
-    assert (await register("hard_utf8_pw", "я" * 40)).status_code == 422  # 80 bytes
+    assert (await register("hard_long_pw", "x" * 73)).status_code == 422
+    assert (await register("hard_utf8_pw", "я" * 40)).status_code == 422
     assert (await register("hard_ok_user", "password123")).status_code == 201
 
 

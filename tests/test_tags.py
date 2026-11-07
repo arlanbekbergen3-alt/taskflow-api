@@ -11,7 +11,7 @@ async def create(client, headers, **payload):
 async def test_tags_are_normalized_and_deduplicated(client, make_user):
     headers = await make_user("tag_norm")
     task = await create(client, headers, title="t", tags=["  Work ", "work", "Urgent"])
-    assert task["tags"] == ["urgent", "work"]  # sorted, lowercased, no duplicates
+    assert task["tags"] == ["urgent", "work"]
 
 
 @pytest.mark.asyncio
@@ -37,7 +37,6 @@ async def test_replace_and_clear_tags(client, make_user):
     response = await client.patch(f"/tasks/{task['id']}", headers=headers, json={"tags": None})
     assert response.status_code == 422
 
-    # PATCH without tags leaves them alone
     await client.patch(f"/tasks/{task['id']}", headers=headers, json={"tags": ["keep"]})
     response = await client.patch(f"/tasks/{task['id']}", headers=headers, json={"title": "new"})
     assert response.json()["tags"] == ["keep"]
@@ -72,7 +71,6 @@ async def test_tags_are_per_user(client, make_user):
     other = await make_user("tag_other")
 
     await create(client, owner, title="mine", tags=["shared-name"])
-    # the same tag name for another user is independent
     task = await create(client, other, title="theirs", tags=["shared-name"])
     assert task["tags"] == ["shared-name"]
 
