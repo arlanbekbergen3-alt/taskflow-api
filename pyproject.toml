@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["alembic/versions", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]  # Depends()/Query() in defaults is the FastAPI idiom
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+"conftest.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "db", "models", "repositories", "routers", "schemas", "services"]
+
+[tool.coverage.run]
+source = ["core", "db", "models", "repositories", "routers", "schemas", "services", "main"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

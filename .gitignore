@@ -1,5 +1,9 @@
-﻿.venv/
+.venv/
 .idea/
 __pycache__/
 *.pyc
 .env
+.coverage
+htmlcov/
+.ruff_cache/
+.pytest_cache/

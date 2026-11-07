@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import ForeignKey
+
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from db.base import Base
 
 if TYPE_CHECKING:
@@ -10,6 +12,9 @@ if TYPE_CHECKING:
 
 class CategoryORM(Base):
     __tablename__ = "categories"
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_categories_user_id_name"),
+    )
 
     name: Mapped[str]
 

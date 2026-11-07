@@ -1,19 +1,20 @@
+import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
     AsyncSession,
     async_sessionmaker,
+    create_async_engine,
 )
 from sqlalchemy.pool import NullPool
 
 from core.config import settings
+from core.rate_limit import login_limiter
 from db.base import Base
 from db.database import get_db
 from main import app
-
 
 # Same server, credentials and options as the app (DATABASE_URL from .env),
 # only a separate database, so tests never touch the app's data.
@@ -85,6 +86,12 @@ async def prepare_database():
     await engine.dispose()
 
 
+@pytest.fixture(autouse=True)
+def reset_login_rate_limit():
+    login_limiter.reset()
+    yield
+
+
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
     async with TestingSessionLocal() as session:
@@ -112,7 +119,7 @@ async def make_user(client):
 
         response = await client.post(
             "/auth/login",
-            json={"username": username, "password": password},
+            data={"username": username, "password": password},
         )
         assert response.status_code == 200
 

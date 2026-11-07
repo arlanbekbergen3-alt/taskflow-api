@@ -1,6 +1,5 @@
 import pytest
 
-
 MISSING_ID = "00000000-0000-0000-0000-000000000000"
 
 
@@ -122,3 +121,41 @@ async def test_deleting_category_unlinks_tasks(client, make_user):
     response = await client.get(f"/tasks/{task_id}", headers=headers)
     assert response.status_code == 200
     assert response.json()["category_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_category_names_are_unique_per_user(client, make_user):
+    owner = await make_user("cat_uniq_owner")
+    other = await make_user("cat_uniq_other")
+
+    assert (await client.post("/categories", headers=owner, json={"name": "Work"})).status_code == 201
+
+    response = await client.post("/categories", headers=owner, json={"name": "Work"})
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Category with this name already exists"}
+
+    # another user may reuse the name
+    assert (await client.post("/categories", headers=other, json={"name": "Work"})).status_code == 201
+
+    home = await client.post("/categories", headers=owner, json={"name": "Home"})
+    home_id = home.json()["id"]
+    response = await client.patch(
+        f"/categories/{home_id}", headers=owner, json={"name": "Work"}
+    )
+    assert response.status_code == 409
+
+    # renaming to its own current name is fine
+    response = await client.patch(
+        f"/categories/{home_id}", headers=owner, json={"name": "Home"}
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_category_null_name_is_422(client, make_user):
+    headers = await make_user("cat_null_user")
+    created = await client.post("/categories", headers=headers, json={"name": "A"})
+    response = await client.patch(
+        f"/categories/{created.json()['id']}", headers=headers, json={"name": None}
+    )
+    assert response.status_code == 422

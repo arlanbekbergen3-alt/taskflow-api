@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.category import CategoryORM
 
 
@@ -16,6 +17,7 @@ class CategoryRepository:
         query = (
             select(CategoryORM)
             .where(CategoryORM.user_id == user_id)
+            .order_by(CategoryORM.name, CategoryORM.id)
             .offset(skip)
             .limit(limit)
         )
@@ -29,6 +31,14 @@ class CategoryRepository:
     ) -> CategoryORM | None:
         query = select(CategoryORM).where(
             CategoryORM.id == category_id,
+            CategoryORM.user_id == user_id,
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_name(self, name: str, user_id: str) -> CategoryORM | None:
+        query = select(CategoryORM).where(
+            CategoryORM.name == name,
             CategoryORM.user_id == user_id,
         )
         result = await self.db.execute(query)

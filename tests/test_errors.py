@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from core.auth import get_current_user
 from main import app

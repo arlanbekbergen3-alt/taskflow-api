@@ -1,41 +1,87 @@
-from fastapi import HTTPException, status
+import hashlib
+import secrets
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.config import settings
+from core.exceptions import ConflictError, UnauthorizedError
+from core.security import create_access_token, hash_password, verify_password
+from repositories.refresh_token import RefreshTokenRepository
 from repositories.user import UserRepository
-from core.security import hash_password, verify_password, create_access_token
+
+INVALID_REFRESH = "Invalid refresh token"
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 class UserService:
     def __init__(self, db: AsyncSession):
+        self.db = db
         self.user_repo = UserRepository(db)
+        self.refresh_repo = RefreshTokenRepository(db)
 
     async def register(self, username: str, password: str):
-        existing_user = await self.user_repo.get_by_username(username)
+        if await self.user_repo.get_by_username(username):
+            raise ConflictError("Username already exists")
 
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Username already exists",
+        try:
+            return await self.user_repo.create(
+                username=username,
+                password_hash=hash_password(password),
             )
+        except IntegrityError:  # concurrent registration of the same name
+            await self.db.rollback()
+            raise ConflictError("Username already exists") from None
 
-        password_hash = hash_password(password)
-
-        return await self.user_repo.create(
-            username=username,
-            password_hash=password_hash,
+    async def _issue_tokens(self, user_id: str) -> dict:
+        refresh = secrets.token_urlsafe(48)
+        await self.refresh_repo.create(
+            user_id=user_id,
+            token_hash=_hash_token(refresh),
+            expires_at=datetime.now(UTC)
+            + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
+        return {
+            "access_token": create_access_token(user_id),
+            "refresh_token": refresh,
+            "token_type": "bearer",
+        }
 
     async def login(self, username: str, password: str):
         user = await self.user_repo.get_by_username(username)
 
-        if not user or not verify_password(password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
-            )
+        if not verify_password(password, user.password_hash if user else None):
+            raise UnauthorizedError("Invalid username or password")
 
-        token = create_access_token(user.id)
+        return await self._issue_tokens(user.id)
 
-        return {
-            "access_token": token,
-            "token_type": "bearer",
-        }
+    async def refresh(self, refresh_token: str):
+        """Rotation: every refresh token works once. Presenting an already
+        used one means it leaked, so all of the user's sessions are revoked."""
+        now = datetime.now(UTC)
+        stored = await self.refresh_repo.get_by_hash(_hash_token(refresh_token))
+
+        if stored is None:
+            raise UnauthorizedError(INVALID_REFRESH)
+
+        if stored.revoked_at is not None:
+            await self.refresh_repo.revoke_all_for_user(stored.user_id, now)
+            raise UnauthorizedError(INVALID_REFRESH)
+
+        if stored.expires_at <= now:
+            raise UnauthorizedError(INVALID_REFRESH)
+
+        if not await self.refresh_repo.revoke(stored, now):
+            raise UnauthorizedError(INVALID_REFRESH)  # lost a concurrent race
+
+        return await self._issue_tokens(stored.user_id)
+
+    async def logout(self, refresh_token: str) -> None:
+        """Idempotent: unknown or already revoked tokens are not an error."""
+        stored = await self.refresh_repo.get_by_hash(_hash_token(refresh_token))
+        if stored is not None and stored.revoked_at is None:
+            await self.refresh_repo.revoke(stored, datetime.now(UTC))

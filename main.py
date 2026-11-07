@@ -1,31 +1,77 @@
 import logging
-from fastapi import FastAPI
+import time
+import uuid
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+
+from core.config import settings
+from core.dependencies import DbSession
+from core.exceptions import AppError
+from core.logging import request_id_var, setup_logging
+from routers.auth import router as auth_router
 from routers.categories import router as categories_router
 from routers.tasks import router as tasks_router
-from fastapi import Request
-from fastapi.responses import JSONResponse
-from routers.auth import router as auth_router
 
+setup_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(
+    title="TaskFlow API",
+    description="Personal task tracker: tasks with priorities and due dates, "
+                "per-user categories, search, filters and statistics.",
+    version="1.0.0",
+)
 
 app.include_router(categories_router)
 app.include_router(tasks_router)
 app.include_router(auth_router)
 
 
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+
+
+@app.get("/health", tags=["Health"])
+async def health(db: DbSession):
+    """Liveness + database connectivity, for Docker/orchestrator checks."""
+    await db.execute(text("SELECT 1"))
+    return {"status": "ok"}
+
+
 # A middleware rather than @app.exception_handler(Exception): Starlette
 # re-raises after running a 500 handler, so uvicorn would log the same
 # traceback a second time. Here the exception stops at this layer.
+#
+# It also gives every request an id (taken from X-Request-ID if the proxy
+# sent one) that appears in every log line and in the response header.
 @app.middleware("http")
-async def global_exception_handler(request: Request, call_next):
+async def request_context(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+    request_id_var.set(request_id[:64])
+    started = time.perf_counter()
     try:
-        return await call_next(request)
+        response = await call_next(request)
     except Exception:
         logger.exception(
             "Unhandled exception on %s %s",
             request.method,
             request.url.path,
         )
-        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+        response = JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+    response.headers["X-Request-ID"] = request_id_var.get()
+    logger.info(
+        "%s %s -> %s (%.1f ms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        (time.perf_counter() - started) * 1000,
+    )
+    return response

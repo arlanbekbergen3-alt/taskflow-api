@@ -1,5 +1,6 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from main import app
 
 
@@ -42,7 +43,7 @@ async def test_create_task_with_auth():
 
         login_response = await client.post(
             "/auth/login",
-            json={
+            data={
                 "username": "task_user_001",
                 "password": "password123"
             }

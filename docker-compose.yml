@@ -25,6 +25,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD:?DB_PASSWORD is not set}@postgres:5432/taskflow_db
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is not set}
+      LOG_FORMAT: json
     volumes:
       - .:/app
     depends_on:

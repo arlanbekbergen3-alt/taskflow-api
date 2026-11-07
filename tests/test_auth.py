@@ -1,5 +1,6 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from main import app
 
 
@@ -46,7 +47,7 @@ async def test_login():
 
         response = await client.post(
             "/auth/login",
-            json={
+            data={
                 "username": "test_user_002",
                 "password": "password123"
             }

@@ -1,41 +1,53 @@
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from db.database import get_db
-from schemas.user import UserCreateSchema, UserSchema, TokenSchema
-from services.user import UserService
-from core.auth import get_current_user
-from models.user import UserORM
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
+
+from core.dependencies import CurrentUser, UserServiceDep
+from core.rate_limit import login_rate_limit
+from schemas.user import (
+    RefreshRequestSchema,
+    TokenSchema,
+    UserCreateSchema,
+    UserSchema,
+)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
-async def register(
-    payload: UserCreateSchema,
-    db: AsyncSession = Depends(get_db),
-):
-    service = UserService(db)
-
+async def register(payload: UserCreateSchema, service: UserServiceDep):
     return await service.register(
         username=payload.username,
         password=payload.password,
     )
 
 
-@router.post("/login", response_model=TokenSchema)
+@router.post(
+    "/login",
+    response_model=TokenSchema,
+    dependencies=[Depends(login_rate_limit)],
+)
 async def login(
-    payload: UserCreateSchema,
-    db: AsyncSession = Depends(get_db),
+        form: Annotated[OAuth2PasswordRequestForm, Depends()],
+        service: UserServiceDep,
 ):
-    service = UserService(db)
-
-    return await service.login(
-        username=payload.username,
-        password=payload.password,
-    )
+    """OAuth2 password flow (form fields), so Swagger's Authorize works."""
+    return await service.login(username=form.username, password=form.password)
 
 
-@router.get("/me")
-async def get_me(current_user: UserORM = Depends(get_current_user)):
+@router.post("/refresh", response_model=TokenSchema, dependencies=[Depends(login_rate_limit)])
+async def refresh(payload: RefreshRequestSchema, service: UserServiceDep):
+    """Exchange a refresh token for a new pair. The old refresh token is
+    single-use: replaying it revokes every session of that user."""
+    return await service.refresh(payload.refresh_token)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(payload: RefreshRequestSchema, service: UserServiceDep):
+    await service.logout(payload.refresh_token)
+
+
+@router.get("/me", response_model=UserSchema)
+async def get_me(current_user: CurrentUser):
     return current_user
