@@ -15,6 +15,9 @@ ignore = ["B008"]  # Depends()/Query() in defaults is the FastAPI idiom
 known-first-party = ["core", "db", "models", "repositories", "routers", "schemas", "services"]
 
 [tool.coverage.run]
+# async SQLAlchemy runs DB code in greenlets; on Python < 3.12 coverage
+# loses those lines unless told about greenlet.
+concurrency = ["greenlet", "thread"]
 source = ["core", "db", "models", "repositories", "routers", "schemas", "services", "main"]
 
 [tool.coverage.report]
