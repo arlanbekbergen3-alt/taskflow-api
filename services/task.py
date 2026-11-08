@@ -3,14 +3,20 @@ from datetime import UTC, datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.cache import Cache
 from core.exceptions import ConflictError, NotFoundError
 from repositories.category import CategoryRepository
 from repositories.tag import TagRepository
 from repositories.task import TaskRepository
 
 
+def _stats_key(user_id: str) -> str:
+    return f"stats:{user_id}"
+
+
 class TaskService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, cache: Cache | None = None):
+        self.cache = cache or Cache(None, 0)
         self.task_repo = TaskRepository(db)
         self.category_repo = CategoryRepository(db)
         self.tag_repo = TagRepository(db)
@@ -54,7 +60,9 @@ class TaskService:
     async def add_task(self, user_id: str, **fields):
         await self._ensure_category_owned(fields.get("category_id"), user_id)
         fields["tags"] = await self._resolve_tags(user_id, fields.get("tags", []))
-        return await self._save(self.task_repo.create(user_id=user_id, **fields))
+        task = await self._save(self.task_repo.create(user_id=user_id, **fields))
+        await self.cache.delete(_stats_key(user_id))
+        return task
 
     async def edit_task(self, task_id: str, user_id: str, update_data: dict):
         task = await self.find_task(task_id=task_id, user_id=user_id)
@@ -68,13 +76,42 @@ class TaskService:
         if "tags" in update_data:
             update_data["tags"] = await self._resolve_tags(user_id, update_data["tags"])
 
-        return await self._save(self.task_repo.update(task, update_data))
+        if "due_date" in update_data:
+            update_data["reminder_sent_at"] = None
+
+        task = await self._save(self.task_repo.update(task, update_data))
+        await self.cache.delete(_stats_key(user_id))
+        return task
 
     async def remove_task(self, task_id: str, user_id: str):
         task = await self.find_task(task_id=task_id, user_id=user_id)
-        await self.task_repo.delete(task)
+        await self.task_repo.update(task, {"deleted_at": datetime.now(UTC)})
+        await self.cache.delete(_stats_key(user_id))
 
-    async def stats(self, user_id: str) -> dict:
+    async def list_trash(self, user_id: str, skip: int = 0, limit: int = 100):
+        return await self.task_repo.get_all(user_id=user_id, skip=skip, limit=limit, deleted=True)
+
+    async def restore_task(self, task_id: str, user_id: str):
+        task = await self.task_repo.get_by_id(task_id=task_id, user_id=user_id, deleted=True)
+        if not task:
+            raise NotFoundError("Task not found in trash")
+        task = await self.task_repo.update(task, {"deleted_at": None})
+        await self.cache.delete(_stats_key(user_id))
+        return task
+
+    async def stats(self, user_id: str) -> tuple[dict, str]:
+        if not self.cache.enabled:
+            return await self._compute_stats(user_id), "BYPASS"
+
+        cached = await self.cache.get(_stats_key(user_id))
+        if cached is not None:
+            return cached, "HIT"
+
+        data = await self._compute_stats(user_id)
+        await self.cache.set(_stats_key(user_id), data)
+        return data, "MISS"
+
+    async def _compute_stats(self, user_id: str) -> dict:
         data = await self.task_repo.stats(user_id)
         total, completed = data["total"], data["completed"]
         return {

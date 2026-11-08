@@ -20,7 +20,7 @@ async def test_unhandled_exception_returns_500_and_is_logged_once(caplog):
             base_url="http://test",
         ) as client:
             with caplog.at_level(logging.ERROR):
-                response = await client.get("/auth/me")
+                response = await client.get("/api/v1/auth/me")
     finally:
         del app.dependency_overrides[get_current_user]
 
@@ -29,5 +29,5 @@ async def test_unhandled_exception_returns_500_and_is_logged_once(caplog):
 
     records = [r for r in caplog.records if r.exc_info]
     assert len(records) == 1
-    assert records[0].getMessage() == "Unhandled exception on GET /auth/me"
+    assert records[0].getMessage() == "Unhandled exception on GET /api/v1/auth/me"
     assert isinstance(records[0].exc_info[1], RuntimeError)

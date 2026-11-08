@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Response, status
 
 from core.dependencies import CurrentUser, TaskServiceDep
 from schemas.task import (
@@ -62,8 +62,20 @@ async def read_tags(service: TaskServiceDep, current_user: CurrentUser):
 
 
 @router.get("/stats", response_model=TaskStatsSchema)
-async def read_task_stats(service: TaskServiceDep, current_user: CurrentUser):
-    return await service.stats(user_id=current_user.id)
+async def read_task_stats(service: TaskServiceDep, current_user: CurrentUser, response: Response):
+    data, cache_state = await service.stats(user_id=current_user.id)
+    response.headers["X-Cache"] = cache_state
+    return data
+
+
+@router.get("/trash", response_model=list[TaskSchema])
+async def read_trash(
+    service: TaskServiceDep,
+    current_user: CurrentUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+):
+    return await service.list_trash(user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/{task_id}", response_model=TaskSchema)
@@ -97,6 +109,11 @@ async def update_task(
         user_id=current_user.id,
         update_data=update_data,
     )
+
+
+@router.post("/{task_id}/restore", response_model=TaskSchema)
+async def restore_task(task_id: str, service: TaskServiceDep, current_user: CurrentUser):
+    return await service.restore_task(task_id=task_id, user_id=current_user.id)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

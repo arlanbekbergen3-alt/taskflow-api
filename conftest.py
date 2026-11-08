@@ -1,3 +1,4 @@
+import fakeredis.aioredis
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -12,6 +13,7 @@ from sqlalchemy.pool import NullPool
 
 from core.config import settings
 from core.rate_limit import login_limiter
+from core.redis import get_redis
 from db.base import Base
 from db.database import get_db
 from main import app
@@ -88,6 +90,16 @@ def reset_login_rate_limit():
     yield
 
 
+@pytest_asyncio.fixture
+async def fake_redis():
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    app.dependency_overrides[get_redis] = lambda: redis
+    yield redis
+    app.dependency_overrides.pop(get_redis, None)
+    await redis.flushall()
+    await redis.aclose()
+
+
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
     async with TestingSessionLocal() as session:
@@ -108,13 +120,13 @@ async def client():
 async def make_user(client):
     async def _make_user(username: str, password: str = "password123") -> dict:
         response = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             json={"username": username, "password": password},
         )
         assert response.status_code == 201
 
         response = await client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             data={"username": username, "password": password},
         )
         assert response.status_code == 200

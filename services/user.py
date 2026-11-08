@@ -53,7 +53,8 @@ class UserService:
     async def login(self, username: str, password: str):
         user = await self.user_repo.get_by_username(username)
 
-        if not verify_password(password, user.password_hash if user else None):
+        password_ok = verify_password(password, user.password_hash if user else None)
+        if user is None or not password_ok:
             raise UnauthorizedError("Invalid username or password")
 
         return await self._issue_tokens(user.id)

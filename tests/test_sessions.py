@@ -8,14 +8,16 @@ from models.refresh_token import RefreshTokenORM
 
 
 async def login(client, username, password="password123"):
-    response = await client.post("/auth/login", data={"username": username, "password": password})
+    response = await client.post(
+        "/api/v1/auth/login", data={"username": username, "password": password}
+    )
     assert response.status_code == 200, response.text
     return response.json()
 
 
 async def register(client, username):
     response = await client.post(
-        "/auth/register", json={"username": username, "password": "password123"}
+        "/api/v1/auth/register", json={"username": username, "password": "password123"}
     )
     assert response.status_code == 201
 
@@ -34,12 +36,16 @@ async def test_refresh_rotates_tokens(client):
     await register(client, "sess_rotate")
     first = await login(client, "sess_rotate")
 
-    response = await client.post("/auth/refresh", json={"refresh_token": first["refresh_token"]})
+    response = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]}
+    )
     assert response.status_code == 200
     second = response.json()
     assert second["refresh_token"] != first["refresh_token"]
 
-    me = await client.get("/auth/me", headers={"Authorization": f"Bearer {second['access_token']}"})
+    me = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {second['access_token']}"}
+    )
     assert me.status_code == 200
     assert me.json()["username"] == "sess_rotate"
 
@@ -49,14 +55,18 @@ async def test_reusing_a_refresh_token_revokes_all_sessions(client):
     await register(client, "sess_reuse")
     first = await login(client, "sess_reuse")
     second = (
-        await client.post("/auth/refresh", json={"refresh_token": first["refresh_token"]})
+        await client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]})
     ).json()
 
-    replay = await client.post("/auth/refresh", json={"refresh_token": first["refresh_token"]})
+    replay = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]}
+    )
     assert replay.status_code == 401
     assert replay.json() == {"detail": "Invalid refresh token"}
 
-    response = await client.post("/auth/refresh", json={"refresh_token": second["refresh_token"]})
+    response = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": second["refresh_token"]}
+    )
     assert response.status_code == 401
 
 
@@ -65,14 +75,16 @@ async def test_refresh_rejects_unknown_and_expired_tokens(client, db_session):
     await register(client, "sess_expired")
     tokens = await login(client, "sess_expired")
 
-    unknown = await client.post("/auth/refresh", json={"refresh_token": "nope"})
+    unknown = await client.post("/api/v1/auth/refresh", json={"refresh_token": "nope"})
     assert unknown.status_code == 401
 
     await db_session.execute(
         update(RefreshTokenORM).values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
     )
     await db_session.commit()
-    expired = await client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    expired = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+    )
     assert expired.status_code == 401
 
 
@@ -82,11 +94,13 @@ async def test_logout_revokes_refresh_token_and_is_idempotent(client):
     tokens = await login(client, "sess_logout")
     body = {"refresh_token": tokens["refresh_token"]}
 
-    assert (await client.post("/auth/logout", json=body)).status_code == 204
-    assert (await client.post("/auth/logout", json=body)).status_code == 204
-    assert (await client.post("/auth/logout", json={"refresh_token": "unknown"})).status_code == 204
+    assert (await client.post("/api/v1/auth/logout", json=body)).status_code == 204
+    assert (await client.post("/api/v1/auth/logout", json=body)).status_code == 204
+    assert (
+        await client.post("/api/v1/auth/logout", json={"refresh_token": "unknown"})
+    ).status_code == 204
 
-    assert (await client.post("/auth/refresh", json=body)).status_code == 401
+    assert (await client.post("/api/v1/auth/refresh", json=body)).status_code == 401
 
 
 @pytest.mark.asyncio
@@ -96,12 +110,12 @@ async def test_login_is_rate_limited(client):
     try:
         for _ in range(3):
             response = await client.post(
-                "/auth/login", data={"username": "sess_limit", "password": "wrong-password"}
+                "/api/v1/auth/login", data={"username": "sess_limit", "password": "wrong-password"}
             )
             assert response.status_code == 401
 
         response = await client.post(
-            "/auth/login", data={"username": "sess_limit", "password": "password123"}
+            "/api/v1/auth/login", data={"username": "sess_limit", "password": "password123"}
         )
         assert response.status_code == 429
         assert int(response.headers["retry-after"]) >= 1

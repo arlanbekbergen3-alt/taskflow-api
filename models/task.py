@@ -17,6 +17,7 @@ class TaskORM(Base):
     __table_args__ = (
         Index("ix_tasks_user_id_completed", "user_id", "completed"),
         Index("ix_tasks_category_id", "category_id"),
+        Index("ix_tasks_deleted_at", "deleted_at"),
     )
 
     title: Mapped[str]
@@ -25,6 +26,8 @@ class TaskORM(Base):
     priority: Mapped[str] = mapped_column(String(10), default="medium", server_default="medium")
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

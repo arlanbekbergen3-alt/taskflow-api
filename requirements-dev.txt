@@ -4,3 +4,5 @@ pytest-asyncio==1.4.0
 pytest-cov
 httpx==0.28.1
 ruff
+fakeredis==2.40.0
+mypy==2.4.1

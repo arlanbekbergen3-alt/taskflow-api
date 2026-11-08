@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import Any, cast
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.refresh_token import RefreshTokenORM
@@ -29,7 +31,7 @@ class RefreshTokenRepository:
             .values(revoked_at=when)
         )
         await self.db.commit()
-        return result.rowcount == 1
+        return cast(CursorResult[Any], result).rowcount == 1
 
     async def revoke_all_for_user(self, user_id: str, when: datetime) -> None:
         await self.db.execute(
@@ -38,3 +40,10 @@ class RefreshTokenRepository:
             .values(revoked_at=when)
         )
         await self.db.commit()
+
+    async def delete_expired(self, now: datetime) -> int:
+        result = await self.db.execute(
+            delete(RefreshTokenORM).where(RefreshTokenORM.expires_at < now)
+        )
+        await self.db.commit()
+        return cast(CursorResult[Any], result).rowcount

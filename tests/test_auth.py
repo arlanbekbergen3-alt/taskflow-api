@@ -10,7 +10,7 @@ async def test_register():
 
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
-            "/auth/register", json={"username": "test_user_001", "password": "password123"}
+            "/api/v1/auth/register", json={"username": "test_user_001", "password": "password123"}
         )
 
         assert response.status_code == 201
@@ -26,11 +26,11 @@ async def test_login():
 
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         await client.post(
-            "/auth/register", json={"username": "test_user_002", "password": "password123"}
+            "/api/v1/auth/register", json={"username": "test_user_002", "password": "password123"}
         )
 
         response = await client.post(
-            "/auth/login", data={"username": "test_user_002", "password": "password123"}
+            "/api/v1/auth/login", data={"username": "test_user_002", "password": "password123"}
         )
 
         assert response.status_code == 200

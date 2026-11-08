@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import Any, cast
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, delete, func, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tag import TagORM
@@ -24,6 +26,10 @@ def _overdue_clause(now):
     return TaskORM.completed.is_(False) & TaskORM.due_date.is_not(None) & (TaskORM.due_date < now)
 
 
+def _trash_clause(deleted: bool):
+    return TaskORM.deleted_at.is_not(None) if deleted else TaskORM.deleted_at.is_(None)
+
+
 class TaskRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -44,8 +50,9 @@ class TaskRepository:
         sort_by: str = "created_at",
         order: str = "desc",
         now: datetime | None = None,
+        deleted: bool = False,
     ) -> list[TaskORM]:
-        query = select(TaskORM).where(TaskORM.user_id == user_id)
+        query = select(TaskORM).where(TaskORM.user_id == user_id, _trash_clause(deleted))
 
         if completed is not None:
             query = query.where(TaskORM.completed == completed)
@@ -75,11 +82,15 @@ class TaskRepository:
             clause = _overdue_clause(now or func.now())
             query = query.where(clause if overdue else ~clause)
 
-        column = _SORT_COLUMNS[sort_by]
-        direction = column.desc() if order == "desc" else column.asc()
-        if sort_by == "due_date":
-            direction = direction.nulls_last()
-        query = query.order_by(direction, TaskORM.id).offset(skip).limit(limit)
+        if deleted:
+            ordering = (TaskORM.deleted_at.desc(), TaskORM.id)
+        else:
+            column = _SORT_COLUMNS[sort_by]
+            direction = column.desc() if order == "desc" else column.asc()
+            if sort_by == "due_date":
+                direction = direction.nulls_last()
+            ordering = (direction, TaskORM.id)
+        query = query.order_by(*ordering).offset(skip).limit(limit)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -88,10 +99,12 @@ class TaskRepository:
         self,
         task_id: str,
         user_id: str,
+        deleted: bool = False,
     ) -> TaskORM | None:
         query = select(TaskORM).where(
             TaskORM.id == task_id,
             TaskORM.user_id == user_id,
+            _trash_clause(deleted),
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -104,7 +117,7 @@ class TaskRepository:
             func.count().filter(TaskORM.priority == "low"),
             func.count().filter(TaskORM.priority == "medium"),
             func.count().filter(TaskORM.priority == "high"),
-        ).where(TaskORM.user_id == user_id)
+        ).where(TaskORM.user_id == user_id, _trash_clause(False))
 
         total, completed, overdue, low, medium, high = (await self.db.execute(query)).one()
         return {
@@ -131,3 +144,27 @@ class TaskRepository:
     async def delete(self, task: TaskORM) -> None:
         await self.db.delete(task)
         await self.db.commit()
+
+    async def claim_due_reminders(self, now: datetime, until: datetime) -> list[TaskORM]:
+        result = await self.db.execute(
+            update(TaskORM)
+            .where(
+                _trash_clause(False),
+                TaskORM.completed.is_(False),
+                TaskORM.reminder_sent_at.is_(None),
+                TaskORM.due_date.is_not(None),
+                TaskORM.due_date >= now,
+                TaskORM.due_date <= until,
+            )
+            .values(reminder_sent_at=now)
+            .returning(TaskORM)
+            .execution_options(populate_existing=True)
+        )
+        tasks = list(result.scalars().all())
+        await self.db.commit()
+        return tasks
+
+    async def purge_trash(self, deleted_before: datetime) -> int:
+        result = await self.db.execute(delete(TaskORM).where(TaskORM.deleted_at < deleted_before))
+        await self.db.commit()
+        return cast(CursorResult[Any], result).rowcount

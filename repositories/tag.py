@@ -2,6 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.tag import TagORM, task_tags
+from models.task import TaskORM
 
 
 class TagRepository:
@@ -25,8 +26,12 @@ class TagRepository:
 
     async def list_with_counts(self, user_id: str) -> list[tuple[str, int]]:
         query = (
-            select(TagORM.name, func.count(task_tags.c.task_id))
+            select(TagORM.name, func.count(TaskORM.id))
             .outerjoin(task_tags, task_tags.c.tag_id == TagORM.id)
+            .outerjoin(
+                TaskORM,
+                (TaskORM.id == task_tags.c.task_id) & TaskORM.deleted_at.is_(None),
+            )
             .where(TagORM.user_id == user_id)
             .group_by(TagORM.id, TagORM.name)
             .order_by(TagORM.name)

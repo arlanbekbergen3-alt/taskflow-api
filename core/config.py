@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     DB_PASSWORD: str | None = None
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "text"
+    REDIS_URL: str | None = None
+    STATS_CACHE_TTL_SECONDS: int = 60
+    CORS_ORIGINS: list[str] = []
+    REMINDER_WINDOW_HOURS: int = 24
+    TRASH_RETENTION_DAYS: int = 30
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -21,4 +26,4 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

@@ -23,3 +23,10 @@ show_missing = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["core", "db", "models", "repositories", "routers", "schemas", "services", "main.py", "worker.py"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true

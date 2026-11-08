@@ -1,3 +1,9 @@
+x-app-env: &app-env
+  DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD:?DB_PASSWORD is not set}@postgres:5432/taskflow_db
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is not set}
+  REDIS_URL: redis://redis:6379/0
+  LOG_FORMAT: json
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -16,20 +22,46 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow_redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   web:
     build: .
     container_name: taskflow_api
     command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD:?DB_PASSWORD is not set}@postgres:5432/taskflow_db
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is not set}
-      LOG_FORMAT: json
+    environment: *app-env
     volumes:
       - .:/app
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    container_name: taskflow_worker
+    command: arq worker.WorkerSettings
+    healthcheck:
+      disable: true
+    environment: *app-env
+    volumes:
+      - .:/app
+    depends_on:
+      web:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

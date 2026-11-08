@@ -9,3 +9,5 @@ PyJWT==2.13.0
 passlib==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.33
+redis==5.3.1
+arq==0.28.0

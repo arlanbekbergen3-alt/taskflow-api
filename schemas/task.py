@@ -64,6 +64,7 @@ class TaskSchema(AppBaseModel):
     priority: Priority
     due_date: datetime | None
     completed_at: datetime | None
+    deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime
     category_id: str | None
@@ -74,7 +75,7 @@ class TaskSchema(AppBaseModel):
     def _tag_names(cls, value):
         return [getattr(tag, "name", tag) for tag in value]
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_overdue(self) -> bool:
         return (
